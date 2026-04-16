@@ -1,97 +1,46 @@
-export function otpEmailHtml(code: string, emailType: string): string {
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Votre code VigiParl</title>
-  <style>
-    body { margin:0; padding:0; background:#0d1117; font-family:'DM Sans',system-ui,sans-serif; }
-    .container { max-width:560px; margin:40px auto; background:#161b22; border:1px solid #2d3748; border-radius:12px; overflow:hidden; }
-    .header { background:#c0392b; padding:28px 36px; }
-    .header h1 { margin:0; color:#fff; font-size:22px; font-weight:600; letter-spacing:-0.02em; }
-    .header p { margin:4px 0 0; color:rgba(255,255,255,0.75); font-size:13px; }
-    .body { padding:36px; }
-    .code-box { background:#0d1117; border:1px solid #2d3748; border-radius:8px; padding:24px; text-align:center; margin:24px 0; }
-    .code { font-family:'JetBrains Mono',monospace; font-size:42px; font-weight:500; color:#f5efe6; letter-spacing:12px; display:block; }
-    .code-label { font-size:12px; color:#8b9ab0; margin-top:8px; text-transform:uppercase; letter-spacing:0.1em; }
-    p { color:#8b9ab0; font-size:14px; line-height:1.6; margin:0 0 12px; }
-    .warning { background:#1a1208; border:1px solid #4a3a0a; border-radius:6px; padding:12px 16px; }
-    .warning p { color:#d0a840; margin:0; font-size:13px; }
-    .footer { padding:20px 36px; border-top:1px solid #2d3748; }
-    .footer p { font-size:12px; color:#4a5568; margin:0; }
-    a { color:#c0392b; text-decoration:none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🏛️ VigiParl</h1>
-      <p>Observatoire des conditions de travail parlementaires</p>
+const base = `background:#0d1117;font-family:'DM Sans',system-ui,sans-serif`
+
+export function otpEmail(code: string, typeLabel: string) {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Code VigieParl</title></head>
+<body style="${base};margin:0;padding:0">
+<div style="max-width:540px;margin:40px auto;background:#161e2d;border:1px solid #1f2d42;border-radius:12px;overflow:hidden">
+  <div style="background:#131922;border-bottom:1px solid #1f2d42;padding:24px 32px;display:flex;align-items:center;gap:10px">
+    <span style="font-size:1.1rem;font-weight:700;color:white;font-family:Georgia,serif">🛡️ VigieParl</span>
+  </div>
+  <div style="padding:32px">
+    <p style="color:#7a90a8;font-size:14px;margin:0 0 8px">Contribution en tant que <strong style="color:white">${typeLabel}</strong></p>
+    <p style="color:#7a90a8;font-size:14px;margin:0 0 20px">Votre code de vérification à usage unique :</p>
+    <div style="background:#0d1117;border:1px solid #1f2d42;border-radius:10px;padding:24px;text-align:center;margin:0 0 20px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:500;color:#f0f4f8;letter-spacing:10px">${code}</span>
+      <p style="color:#7a90a8;font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin:8px 0 0">Valable 15 minutes</p>
     </div>
-    <div class="body">
-      <p>Vous avez demandé à contribuer à VigiParl en tant que <strong style="color:#f5efe6">${emailType}</strong>.</p>
-      <p>Voici votre code de vérification à usage unique :</p>
-      <div class="code-box">
-        <span class="code">${code}</span>
-        <span class="code-label">Valable 15 minutes</span>
-      </div>
-      <p>Entrez ce code sur la page VigiParl pour continuer. Ne le partagez avec personne.</p>
-      <div class="warning">
-        <p>⚠️ Si vous n'avez pas initié cette demande, ignorez cet email. Votre adresse n'a pas été enregistrée.</p>
-      </div>
-    </div>
-    <div class="footer">
-      <p>VigiParl est un projet de <a href="https://cavaparlement.eu">CavaParlement</a>. Vos données sont traitées de façon confidentielle. <a href="https://vigiparl.cavaparlement.eu/confidentialite">Politique de confidentialité</a></p>
+    <div style="background:rgba(232,184,75,.07);border:1px solid rgba(232,184,75,.2);border-radius:8px;padding:12px 16px">
+      <p style="color:#e8b84b;font-size:13px;margin:0">⚠️ Si vous n'avez pas initié cette demande, ignorez cet email.</p>
     </div>
   </div>
-</body>
-</html>`;
+  <div style="padding:16px 32px;border-top:1px solid #1f2d42">
+    <p style="color:#4a5568;font-size:12px;margin:0">VigieParl · <a href="https://vigiparl.cavaparlement.eu" style="color:#7a90a8">vigiparl.cavaparlement.eu</a></p>
+  </div>
+</div>
+</body></html>`
 }
 
-export function confirmationEmailHtml(eluNom: string): string {
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Contribution reçue — VigiParl</title>
-  <style>
-    body { margin:0; padding:0; background:#0d1117; font-family:'DM Sans',system-ui,sans-serif; }
-    .container { max-width:560px; margin:40px auto; background:#161b22; border:1px solid #2d3748; border-radius:12px; overflow:hidden; }
-    .header { background:#c0392b; padding:28px 36px; }
-    .header h1 { margin:0; color:#fff; font-size:22px; font-weight:600; letter-spacing:-0.02em; }
-    .body { padding:36px; }
-    .check { font-size:48px; text-align:center; margin:0 0 20px; display:block; }
-    h2 { color:#f5efe6; font-size:20px; margin:0 0 12px; text-align:center; }
-    p { color:#8b9ab0; font-size:14px; line-height:1.6; margin:0 0 12px; }
-    .info-box { background:#0d1117; border:1px solid #2d3748; border-radius:8px; padding:16px 20px; margin:20px 0; }
-    .info-box p { margin:0; color:#e8dcc8; font-size:13px; }
-    a.btn { display:inline-block; background:#c0392b; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-size:14px; font-weight:500; margin-top:8px; }
-    .footer { padding:20px 36px; border-top:1px solid #2d3748; }
-    .footer p { font-size:12px; color:#4a5568; margin:0; }
-    a { color:#c0392b; text-decoration:none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🏛️ VigiParl — Contribution enregistrée</h1>
-    </div>
-    <div class="body">
-      <span class="check">✅</span>
-      <h2>Merci pour votre témoignage</h2>
-      <p>Votre contribution concernant <strong style="color:#f5efe6">${eluNom}</strong> a bien été reçue et sera examinée avant publication.</p>
-      <div class="info-box">
-        <p>📋 Votre témoignage sera visible sur la page de l'élu une fois validé manuellement et lorsque 5 contributions minimales auront été collectées.</p>
-      </div>
-      <p>Votre anonymat est garanti : aucune information permettant de vous identifier ne sera publiée. Seules les données agrégées (notes moyennes, tendances) sont rendues publiques.</p>
-      <a href="https://vigiparl.cavaparlement.eu/elus" class="btn">Consulter l'annuaire des élus →</a>
-    </div>
-    <div class="footer">
-      <p>VigiParl est un projet de <a href="https://cavaparlement.eu">CavaParlement</a>. Contact : <a href="mailto:contact@cavaparlement.eu">contact@cavaparlement.eu</a></p>
-    </div>
+export function confirmEmail(eluNom: string) {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Contribution reçue</title></head>
+<body style="${base};margin:0;padding:0">
+<div style="max-width:540px;margin:40px auto;background:#161e2d;border:1px solid #1f2d42;border-radius:12px;overflow:hidden">
+  <div style="background:#131922;border-bottom:1px solid #1f2d42;padding:24px 32px">
+    <span style="font-size:1.1rem;font-weight:700;color:white;font-family:Georgia,serif">🛡️ VigieParl — Contribution reçue</span>
   </div>
-</body>
-</html>`;
+  <div style="padding:32px;text-align:center">
+    <span style="font-size:48px;display:block;margin-bottom:16px">✅</span>
+    <h2 style="color:white;font-family:Georgia,serif;font-size:1.4rem;margin:0 0 12px">Merci pour votre témoignage</h2>
+    <p style="color:#7a90a8;font-size:14px;margin:0 0 20px">Votre contribution concernant <strong style="color:white">${eluNom}</strong> a bien été reçue.</p>
+    <div style="background:#1a2333;border:1px solid #1f2d42;border-radius:10px;padding:16px 20px;text-align:left;margin:0 0 24px">
+      <p style="color:#7a90a8;font-size:13px;line-height:1.8;margin:0">📋 En attente de validation manuelle<br/>🔒 Publication après 5 contributions min.<br/>📊 Seules les données agrégées sont publiques</p>
+    </div>
+    <a href="https://vigiparl.cavaparlement.eu/elus" style="display:inline-block;background:#e8b84b;color:#0d1117;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Consulter l'annuaire →</a>
+  </div>
+</div>
+</body></html>`
 }
