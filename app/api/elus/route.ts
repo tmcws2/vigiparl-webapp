@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   const page = parseInt(p.get('page') || '1'); const limit = parseInt(p.get('limit') || '20')
   const db = supabaseAnon()
   let query = db.from('elus')
-    .select('id,nom,prenom,chambre,groupe_sigle,groupe_label,famille_politique,departement,an_id,matricule,ep_id,mandat_clos,vigiparl_elu_scores(contributions_count,score_global,score_conditions_travail,score_relations_elu,score_contenu_travail,score_remuneration,score_ambiance,recommande_pct)', { count: 'exact' })
-    .eq('mandat_clos', false).range((page-1)*limit, page*limit-1).order('nom')
+    .select('id,nom,prenom,chambre,groupe,groupe_label,famille_politique,departement,an_id,matricule,ep_id,en_exercice,vigiparl_elu_scores(contributions_count,score_global,score_conditions_travail,score_relations_elu,score_contenu_travail,score_remuneration,score_ambiance,recommande_pct)', { count: 'exact' })
+    .eq('en_exercice', false).range((page-1)*limit, page*limit-1).order('nom')
   if (q) query = query.or(`nom.ilike.%${q}%,prenom.ilike.%${q}%`)
   if (chambre) query = query.eq('chambre', chambre.toUpperCase())
   const { data, error, count } = await query
