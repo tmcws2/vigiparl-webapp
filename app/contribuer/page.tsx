@@ -259,7 +259,7 @@ export default function ContribuerPage() {
             <div className="flex justify-between mt-6">
               <button className="btn btn-ghost" onClick={() => setStep(1)}>← Retour</button>
               <button className="btn btn-gold btn-md" onClick={sendOtp}
-                disabled={loading || !email || !prenom || !nom || !tranche || !genre}>
+                disabled={loading || !email || !prenom || !nom || !tranche || !genre || !turnstileToken}>
                 <Turnstile onVerify={(t) => setTurnstileToken(t)} onExpire={() => setTurnstileToken('')} />{loading ? 'Envoi…' : 'Suivant →'}
               </button>
             </div>
