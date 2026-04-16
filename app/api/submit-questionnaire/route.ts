@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // Notification admin
     await resend.emails.send({
       from: 'VigieParl <no-reply@vigiparl.cavaparlement.eu>',
-      to: 'hello@cavaparlement.eu',
+      to: 'contact@cavaparlement.eu',
       subject: `[VigieParl] Nouveau témoignage — ${b.eluNom}`,
       html: `
         <div style="font-family:sans-serif;max-width:500px;margin:40px auto;background:#161e2d;border:1px solid #1f2d42;border-radius:12px;overflow:hidden">

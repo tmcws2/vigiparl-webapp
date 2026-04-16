@@ -1,28 +1,23 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "VigiParl — Observatoire des conditions de travail parlementaires",
-  description:
-    "Plateforme anonyme de collecte de témoignages sur les conditions de travail des collaborateurs parlementaires (Assemblée nationale, Sénat, Parlement européen).",
+  title: 'VigieParl — Observatoire des cabinets parlementaires',
+  description: 'Données publiques et feedback structuré des collaborateur·rices pour une transparence fiable sur la vie interne des cabinets parlementaires.',
   openGraph: {
-    title: "VigiParl",
-    description: "La transparence commence dans les bureaux",
-    url: "https://vigiparl.cavaparlement.eu",
-    siteName: "VigiParl",
-    locale: "fr_FR",
-    type: "website",
+    title: 'VigieParl',
+    description: 'Observatoire des cabinets parlementaires',
+    url: 'https://vigiparl.cavaparlement.eu',
+    siteName: 'VigieParl',
+    locale: 'fr_FR',
+    type: 'website',
   },
-};
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className="noise min-h-screen">{children}</body>
+      <body>{children}</body>
     </html>
-  );
+  )
 }

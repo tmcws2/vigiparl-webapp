@@ -1,384 +1,217 @@
-"use client";
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import ScoreRing from "@/components/ScoreRing";
-
-type EluWithScores = {
-  id: number;
-  nom: string;
-  prenom: string;
-  chambre: "AN" | "SENAT" | "EUROPARL";
-  groupe_sigle: string | null;
-  groupe_label: string | null;
-  famille_politique: string | null;
-  departement: string | null;
-  an_id: string | null;
-  matricule: string | null;
-  ep_id: string | null;
+type Elu = {
+  id: number; nom: string; prenom: string; chambre: string
+  groupe_sigle: string | null; groupe_label: string | null
+  famille_politique: string | null; departement: string | null
+  an_id: string | null; matricule: string | null; ep_id: string | null
   vigiparl_elu_scores: {
-    contributions_count: number;
-    score_global: number;
-    score_conditions_travail: number;
-    score_relations_elu: number;
-    score_contenu_travail: number;
-    score_remuneration: number;
-    score_ambiance: number;
-    recommande_pct: number;
-  } | null;
-};
+    contributions_count: number; score_global: number
+    score_conditions_travail: number; score_relations_elu: number
+    score_contenu_travail: number; score_remuneration: number
+    score_ambiance: number; recommande_pct: number
+  } | null
+}
 
-const CHAMBRE_BADGE: Record<string, string> = {
-  AN: "badge-an",
-  SENAT: "badge-senat",
-  EUROPARL: "badge-pe",
-};
+const CHAMBRE_LABEL: Record<string, string> = { AN: 'Assemblée nationale', SENAT: 'Sénat', EUROPARL: 'Parlement européen' }
 
-const CHAMBRE_LABEL: Record<string, string> = {
-  AN: "Assemblée nationale",
-  SENAT: "Sénat",
-  EUROPARL: "Parlement européen",
-};
+function photoUrl(e: Elu) {
+  const base = 'https://raw.githubusercontent.com/cavaparlement/cavaparlement-bot/main/photos'
+  if (e.chambre === 'AN' && e.an_id) return `${base}/assemblee/${e.an_id}.jpg`
+  if (e.chambre === 'SENAT' && e.matricule) return `${base}/senat/${e.matricule}.jpg`
+  if (e.chambre === 'EUROPARL' && e.ep_id) return `${base}/europarl/${e.ep_id}.jpg`
+  return null
+}
 
-const FAMILLE_COLORS: Record<string, string> = {
-  "Identitaires & souverainistes": "#c0392b",
-  "Démocrates-chrétiens & droite classique": "#2980b9",
-  "Libéraux & centristes": "#f39c12",
-  "Socialistes & progressistes": "#e91e63",
-  "Écologistes": "#27ae60",
-  "Gauche radicale": "#8e44ad",
-};
-
-function photoUrl(elu: EluWithScores): string | null {
-  if (elu.chambre === "AN" && elu.an_id)
-    return `https://raw.githubusercontent.com/cavaparlement/cavaparlement-bot/main/photos/assemblee/${elu.an_id}.jpg`;
-  if (elu.chambre === "SENAT" && elu.matricule)
-    return `https://raw.githubusercontent.com/cavaparlement/cavaparlement-bot/main/photos/senat/${elu.matricule}.jpg`;
-  if (elu.chambre === "EUROPARL" && elu.ep_id)
-    return `https://raw.githubusercontent.com/cavaparlement/cavaparlement-bot/main/photos/europarl/${elu.ep_id}.jpg`;
-  return null;
+function ScoreBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1.5">
+        <span className="text-white">{label}</span>
+        <span className="text-or font-mono">{score.toFixed(1)}/5</span>
+      </div>
+      <div className="score-bar"><div className="score-bar-fill" style={{ width: `${score / 5 * 100}%` }} /></div>
+    </div>
+  )
 }
 
 export default function ElusPage() {
-  const [query, setQuery] = useState("");
-  const [chambre, setChambre] = useState("");
-  const [elus, setElus] = useState<EluWithScores[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<EluWithScores | null>(null);
+  const [q, setQ] = useState(''); const [chambre, setChambre] = useState('')
+  const [elus, setElus] = useState<Elu[]>([]); const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1); const [loading, setLoading] = useState(false)
+  const [selected, setSelected] = useState<Elu | null>(null)
 
-  const fetchElus = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async () => {
+    setLoading(true)
     try {
-      const params = new URLSearchParams({
-        q: query,
-        page: String(page),
-        ...(chambre && { chambre }),
-      });
-      const res = await fetch(`/api/elus?${params}`);
-      const data = await res.json();
-      setElus(data.elus || []);
-      setTotal(data.total || 0);
-    } finally {
-      setLoading(false);
-    }
-  }, [query, chambre, page]);
+      const r = await fetch(`/api/elus?q=${encodeURIComponent(q)}&chambre=${chambre}&page=${page}`)
+      const d = await r.json()
+      setElus(d.elus || []); setTotal(d.total || 0)
+    } finally { setLoading(false) }
+  }, [q, chambre, page])
 
-  useEffect(() => {
-    fetchElus();
-  }, [fetchElus]);
+  useEffect(() => { load() }, [load])
+  useEffect(() => { setPage(1) }, [q, chambre])
 
-  // Reset page on filter change
-  useEffect(() => { setPage(1); }, [query, chambre]);
-
-  const totalPages = Math.ceil(total / 20);
+  const pages = Math.ceil(total / 20)
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <nav className="border-b border-[#2d3748] px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-encre/95 backdrop-blur-sm">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="text-xl">🏛️</span>
-          <span className="font-display font-semibold text-parchemin">VigiParl</span>
-        </Link>
-        <Link href="/questionnaire" className="btn-primary text-sm">📝 Témoigner</Link>
-      </nav>
-
+    <div className="min-h-screen bg-navy flex flex-col">
+      <Nav active="observatoire" />
       <div className="flex flex-1">
-        {/* Left panel: search + list */}
-        <div className={`flex flex-col ${selected ? "hidden lg:flex lg:w-1/2 xl:w-2/5" : "flex-1"} border-r border-[#2d3748]`}>
-          {/* Header */}
-          <div className="px-6 py-6 border-b border-[#2d3748]">
-            <h1 className="font-display text-2xl text-parchemin mb-1">Annuaire des élus</h1>
-            <p className="text-acier text-sm font-sans">
-              {total > 0 ? `${total.toLocaleString("fr-FR")} élus` : "Recherche…"}
-              {" · Scores visibles à partir de 5 contributions"}
-            </p>
+        {/* List */}
+        <div className={`flex flex-col border-r border-border ${selected ? 'hidden lg:flex lg:w-2/5' : 'flex-1'}`}>
+          <div className="px-5 py-5 border-b border-border">
+            <h1 className="h2 mb-0.5">Annuaire des élu·es</h1>
+            <p className="text-muted text-sm">{total > 0 ? `${total.toLocaleString('fr-FR')} élu·es` : '—'} · scores visibles à partir de 5 contributions</p>
           </div>
-
-          {/* Filters */}
-          <div className="px-6 py-4 border-b border-[#2d3748] space-y-3">
-            <input
-              type="search"
-              className="input-dark"
-              placeholder="Rechercher un élu par nom…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+          <div className="px-5 py-4 border-b border-border space-y-3">
+            <input className="input" placeholder="Rechercher un·e élu·e…" value={q} onChange={e => setQ(e.target.value)} />
             <div className="flex gap-2">
-              {["", "AN", "SENAT", "EUROPARL"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setChambre(c)}
-                  className={`flex-1 py-1.5 text-xs font-mono rounded border transition-colors ${
-                    chambre === c
-                      ? "border-brique text-brique bg-brique/10"
-                      : "border-[#2d3748] text-acier hover:border-acier"
-                  }`}
-                >
-                  {c || "Toutes"}
+              {['', 'AN', 'SENAT', 'EUROPARL'].map(c => (
+                <button key={c} onClick={() => setChambre(c)}
+                  className={`flex-1 py-1.5 text-xs font-mono rounded-lg border transition-colors ${chambre === c ? 'border-or text-or bg-or/10' : 'border-border text-muted hover:border-muted'}`}>
+                  {c || 'Toutes'}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* List */}
           <div className="flex-1 overflow-y-auto">
-            {loading && (
-              <div className="flex items-center justify-center py-16 text-acier">
-                <span className="font-mono text-sm">Chargement…</span>
-              </div>
-            )}
-            {!loading && elus.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-acier">
-                <span className="text-4xl mb-3">🔍</span>
-                <p className="text-sm font-sans">Aucun élu trouvé</p>
-              </div>
-            )}
-            {!loading && elus.map((elu) => {
-              const scores = elu.vigiparl_elu_scores;
-              const photo = photoUrl(elu);
-              const isSelected = selected?.id === elu.id;
-
+            {loading && <p className="text-muted text-sm text-center py-12">Chargement…</p>}
+            {!loading && elus.length === 0 && <p className="text-muted text-sm text-center py-12">Aucun résultat</p>}
+            {!loading && elus.map(e => {
+              const sc = e.vigiparl_elu_scores
+              const photo = photoUrl(e)
               return (
-                <button
-                  key={elu.id}
-                  onClick={() => setSelected(isSelected ? null : elu)}
-                  className={`w-full flex items-center gap-4 px-6 py-4 border-b border-[#2d3748] hover:bg-encre2 transition-colors text-left ${
-                    isSelected ? "bg-encre2 border-l-2 border-l-brique" : ""
-                  }`}
-                >
-                  {/* Photo */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-[#2d3748] flex-shrink-0">
+                <button key={e.id} onClick={() => setSelected(selected?.id === e.id ? null : e)}
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 border-b border-border hover:bg-navy2 transition-colors text-left ${selected?.id === e.id ? 'bg-navy2 border-l-2 border-l-or' : ''}`}>
+                  <div className="w-10 h-10 rounded-full bg-navy3 flex-shrink-0 overflow-hidden flex items-center justify-center text-sm text-muted font-medium">
                     {photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photo}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-acier text-lg">
-                        {elu.prenom[0]}{elu.nom[0]}
-                      </div>
-                    )}
+                      <img src={photo} alt="" className="w-full h-full object-cover"
+                        onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+                    ) : `${e.prenom[0]}${e.nom[0]}`}
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-parchemin text-sm font-sans font-medium truncate">
-                      {elu.prenom} {elu.nom}
-                    </p>
-                    <p className="text-acier text-xs mt-0.5 truncate">
-                      {elu.groupe_sigle && <span className="mr-2">{elu.groupe_sigle}</span>}
-                      {elu.departement}
-                    </p>
+                    <p className="text-white text-sm font-medium truncate">{e.prenom} {e.nom}</p>
+                    <p className="text-muted text-xs truncate mt-0.5">{e.groupe_sigle && `${e.groupe_sigle} · `}{e.departement || CHAMBRE_LABEL[e.chambre]}</p>
                   </div>
-
-                  {/* Score or badge */}
-                  <div className="flex-shrink-0 flex items-center gap-2">
-                    {scores ? (
-                      <div className="text-right">
-                        <p className="text-or font-mono text-sm font-medium">{scores.score_global.toFixed(1)}</p>
-                        <p className="text-acier text-xs">{scores.contributions_count} avis</p>
-                      </div>
+                  <div className="flex-shrink-0 text-right">
+                    {sc ? (
+                      <><p className="text-or font-mono text-sm font-medium">{sc.score_global.toFixed(1)}</p>
+                      <p className="text-muted text-xs">{sc.contributions_count} avis</p></>
                     ) : (
-                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${CHAMBRE_BADGE[elu.chambre]}`}>
-                        {elu.chambre}
-                      </span>
+                      <span className={`badge text-xs ${e.chambre === 'AN' ? 'badge-an' : e.chambre === 'SENAT' ? 'badge-senat' : 'badge-pe'}`}>{e.chambre}</span>
                     )}
                   </div>
                 </button>
-              );
+              )
             })}
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-[#2d3748] flex items-center justify-between">
-              <button
-                className="btn-ghost text-sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                ← Précédent
-              </button>
-              <span className="text-acier text-sm font-mono">
-                {page} / {totalPages}
-              </span>
-              <button
-                className="btn-ghost text-sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Suivant →
-              </button>
+          {pages > 1 && (
+            <div className="px-5 py-4 border-t border-border flex items-center justify-between">
+              <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>← Préc.</button>
+              <span className="text-muted text-sm font-mono">{page} / {pages}</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>Suiv. →</button>
             </div>
           )}
         </div>
 
-        {/* Right panel: detail */}
-        {selected && (
-          <div className="flex-1 lg:flex flex-col overflow-y-auto">
-            <div className="px-6 py-6 border-b border-[#2d3748] flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-[#2d3748] flex-shrink-0">
-                  {photoUrl(selected) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photoUrl(selected)!}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl text-acier">
-                      {selected.prenom[0]}{selected.nom[0]}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h2 className="font-display text-2xl text-parchemin">{selected.prenom} {selected.nom}</h2>
-                  <p className="text-acier text-sm mt-1">{CHAMBRE_LABEL[selected.chambre]}</p>
-                  {selected.famille_politique && (
-                    <span
-                      className="inline-block text-xs px-2 py-0.5 rounded-full mt-2 font-sans"
-                      style={{
-                        background: `${FAMILLE_COLORS[selected.famille_politique] || "#4a5568"}20`,
-                        color: FAMILLE_COLORS[selected.famille_politique] || "#8b9ab0",
-                        border: `1px solid ${FAMILLE_COLORS[selected.famille_politique] || "#4a5568"}40`,
-                      }}
-                    >
-                      {selected.famille_politique}
-                    </span>
-                  )}
-                </div>
+        {/* Detail */}
+        {selected ? (
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-6 py-6 border-b border-border flex items-start gap-4">
+              <div className="w-16 h-16 rounded-full bg-navy3 flex-shrink-0 overflow-hidden flex items-center justify-center text-xl text-muted font-medium">
+                {photoUrl(selected) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl(selected)!} alt="" className="w-full h-full object-cover"
+                    onError={ev => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+                ) : `${selected.prenom[0]}${selected.nom[0]}`}
               </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-acier hover:text-parchemin text-2xl leading-none lg:hidden"
-              >
-                ×
-              </button>
+              <div className="flex-1">
+                <h2 className="font-spectral font-bold text-white text-2xl">{selected.prenom} {selected.nom}</h2>
+                <p className="text-muted text-sm mt-1">{CHAMBRE_LABEL[selected.chambre]}</p>
+                {selected.famille_politique && <span className="badge badge-or mt-2">{selected.famille_politique}</span>}
+              </div>
+              <button onClick={() => setSelected(null)} className="text-muted hover:text-white text-2xl lg:hidden">×</button>
             </div>
 
             <div className="px-6 py-6">
-              {/* Metadata */}
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {[
-                  { label: "Chambre", value: CHAMBRE_LABEL[selected.chambre] },
-                  { label: "Groupe", value: selected.groupe_label || selected.groupe_sigle || "—" },
-                  { label: "Famille politique", value: selected.famille_politique || "—" },
-                  { label: "Département", value: selected.departement || "—" },
-                ].map((item) => (
-                  <div key={item.label} className="bg-encre2 border border-[#2d3748] rounded-lg p-3">
-                    <p className="text-acier text-xs font-mono uppercase tracking-wide mb-1">{item.label}</p>
-                    <p className="text-parchemin text-sm font-sans">{item.value}</p>
+                  { l: 'Chambre',          v: CHAMBRE_LABEL[selected.chambre] },
+                  { l: 'Groupe',           v: selected.groupe_label || selected.groupe_sigle || '—' },
+                  { l: 'Famille pol.',     v: selected.famille_politique || '—' },
+                  { l: 'Département',      v: selected.departement || '—' },
+                ].map(it => (
+                  <div key={it.l} className="card">
+                    <p className="text-muted text-xs uppercase tracking-wide mb-1">{it.l}</p>
+                    <p className="text-white text-sm">{it.v}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Scores section */}
               {selected.vigiparl_elu_scores ? (
                 <>
-                  <h3 className="font-display text-xl text-parchemin mb-1">Évaluations des collaborateurs</h3>
-                  <p className="text-acier text-sm font-sans mb-6">
-                    Basé sur {selected.vigiparl_elu_scores.contributions_count} témoignages validés
-                  </p>
+                  <h3 className="h3 mb-1">Évaluations des collaborateurs</h3>
+                  <p className="text-muted text-sm mb-6">Basé sur {selected.vigiparl_elu_scores.contributions_count} témoignages validés</p>
 
-                  {/* Global score + recommend */}
-                  <div className="flex items-center gap-6 mb-8 bg-encre2 border border-[#2d3748] rounded-xl p-5">
-                    <ScoreRing score={selected.vigiparl_elu_scores.score_global} size="lg" />
+                  <div className="card mb-5 flex items-center gap-5">
+                    <div className="text-center flex-shrink-0">
+                      <p className="font-spectral font-bold text-or text-4xl">{selected.vigiparl_elu_scores.score_global.toFixed(1)}</p>
+                      <p className="text-muted text-xs mt-1">/ 5</p>
+                    </div>
                     <div>
-                      <p className="text-parchemin font-display text-lg mb-1">Note globale</p>
-                      <p className="text-acier text-sm font-sans">
-                        {selected.vigiparl_elu_scores.recommande_pct !== null && (
-                          <>
-                            <span className="text-parchemin font-medium">{selected.vigiparl_elu_scores.recommande_pct}%</span> recommanderaient ce poste
-                          </>
-                        )}
-                      </p>
+                      <p className="text-white font-semibold">Note globale</p>
+                      {selected.vigiparl_elu_scores.recommande_pct !== null && (
+                        <p className="text-muted text-sm mt-1">
+                          <strong className="text-white">{selected.vigiparl_elu_scores.recommande_pct}%</strong> recommanderaient ce poste
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Detailed scores */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+                  <div className="card space-y-4 mb-5">
                     {[
-                      { label: "Conditions", key: "score_conditions_travail", icon: "⏰" },
-                      { label: "Relations", key: "score_relations_elu", icon: "🤝" },
-                      { label: "Contenu", key: "score_contenu_travail", icon: "💼" },
-                      { label: "Rémunération", key: "score_remuneration", icon: "💶" },
-                      { label: "Ambiance", key: "score_ambiance", icon: "👥" },
-                    ].map((item) => {
-                      const score = selected.vigiparl_elu_scores![item.key as keyof typeof selected.vigiparl_elu_scores] as number;
-                      return (
-                        <div key={item.key} className="bg-encre2 border border-[#2d3748] rounded-lg p-4 flex flex-col items-center gap-2">
-                          <span className="text-xl">{item.icon}</span>
-                          <ScoreRing score={score} size="sm" />
-                          <p className="text-acier text-xs font-sans text-center">{item.label}</p>
-                        </div>
-                      );
-                    })}
+                      { label: 'Conditions de travail', key: 'score_conditions_travail' },
+                      { label: "Relations avec l'élu·e", key: 'score_relations_elu' },
+                      { label: 'Contenu du travail', key: 'score_contenu_travail' },
+                      { label: 'Rémunération', key: 'score_remuneration' },
+                      { label: 'Ambiance', key: 'score_ambiance' },
+                    ].map(it => (
+                      <ScoreBar key={it.key} label={it.label}
+                        score={selected.vigiparl_elu_scores![it.key as keyof typeof selected.vigiparl_elu_scores] as number} />
+                    ))}
                   </div>
                 </>
               ) : (
-                <div className="bg-encre2 border border-[#2d3748] rounded-xl p-8 text-center">
-                  <span className="text-4xl mb-4 block">📋</span>
-                  <h3 className="font-display text-xl text-parchemin mb-2">Pas encore de données</h3>
-                  <p className="text-acier text-sm font-sans mb-6 max-w-xs mx-auto">
-                    Les scores s&apos;afficheront dès que 5 contributions validées auront été collectées pour cet élu.
-                  </p>
-                  <Link href="/questionnaire" className="btn-primary inline-block">
-                    📝 Déposer un témoignage
-                  </Link>
+                <div className="card text-center py-10">
+                  <span className="text-4xl block mb-3">📋</span>
+                  <h3 className="h3 mb-2">Pas encore de données</h3>
+                  <p className="text-muted text-sm mb-5 max-w-xs mx-auto">Les scores s&apos;affichent dès que 5 contributions validées ont été collectées.</p>
+                  <Link href="/contribuer" className="btn btn-gold btn-md">📝 Déposer un témoignage</Link>
                 </div>
               )}
 
-              <div className="mt-4">
-                <Link href="/questionnaire" className="btn-ghost w-full text-center block">
-                  📝 Contribuer pour {selected.prenom} {selected.nom}
-                </Link>
-              </div>
+              <Link href="/contribuer" className="btn btn-outline btn-md w-full justify-center mt-2">
+                📝 Contribuer pour {selected.prenom} {selected.nom}
+              </Link>
             </div>
           </div>
-        )}
-
-        {/* Empty state when no selection on desktop */}
-        {!selected && (
+        ) : (
           <div className="hidden lg:flex flex-1 items-center justify-center text-center px-12">
             <div>
-              <span className="text-5xl mb-4 block">👈</span>
-              <p className="text-acier font-sans">Sélectionnez un élu pour voir ses évaluations</p>
+              <span className="text-5xl block mb-3">👈</span>
+              <p className="text-muted">Sélectionnez un·e élu·e pour voir ses évaluations</p>
             </div>
           </div>
         )}
       </div>
+      <Footer />
     </div>
-  );
+  )
 }
