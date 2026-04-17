@@ -11,17 +11,78 @@ type Elu = {
   photo_url: string|null; en_exercice: boolean
   vigiparl_elu_scores: { contributions_count: number; score_global: number; score_conditions_travail: number; score_relations_elu: number; score_contenu_travail: number; score_remuneration: number; score_ambiance: number; recommande_pct: number } | null
 }
-
-type EluStats = {
-  tailleActuelle: number; ancienneteMoyenneMois: number|null; pctFemmes: number|null
-  femmes: number; hommes: number; turnover12m: number|null
-  arrivees12m: number; departs12m: number; totalMouvementsHistorique: number
-}
+type EluStats = { tailleActuelle: number; ancienneteMoyenneMois: number|null; pctFemmes: number|null; femmes: number; hommes: number; turnover12m: number|null; arrivees12m: number; departs12m: number; totalMouvementsHistorique: number }
 
 const CHAMBRE: Record<string, { label: string; short: string; color: string; bg: string }> = {
   assemblee: { label: 'Assemblée nationale', short: 'AN', color: '#60a5fa', bg: 'rgba(96,165,250,.15)' },
   senat:     { label: 'Sénat',               short: 'SE', color: '#c084fc', bg: 'rgba(192,132,252,.15)' },
   europarl:  { label: 'Parlement européen',  short: 'PE', color: '#34d399', bg: 'rgba(52,211,153,.15)' },
+}
+
+function mixiteColor(pct: number): string {
+  if (pct < 30) return '#ef4444'
+  if (pct < 45) return '#f97316'
+  if (pct <= 55) return '#22c55e'
+  if (pct <= 70) return '#3b82f6'
+  return '#a855f7'
+}
+
+function MixiteGauge({ pct, femmes, hommes }: { pct: number; femmes: number; hommes: number }) {
+  const [displayed, setDisplayed] = useState(0)
+  useEffect(() => {
+    let start = 0
+    const target = pct
+    const duration = 600
+    const startTime = performance.now()
+    function animate(now: number) {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setDisplayed(Math.round(target * ease))
+      if (progress < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }, [pct])
+
+  const color = mixiteColor(pct)
+  // Angle: 0% = -90deg (gauche), 50% = 0deg (haut), 100% = 90deg (droite)
+  const angle = (displayed / 100) * 180 - 90
+  const r = 52
+  const cx = 70; const cy = 70
+
+  return (
+    <div>
+      <div className="flex flex-col items-center">
+        <svg width="140" height="85" viewBox="0 0 140 85">
+          {/* Arc de fond */}
+          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke="#2d3748" strokeWidth="10" strokeLinecap="round" />
+          {/* Arc coloré */}
+          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={`${Math.PI * r * displayed / 100} ${Math.PI * r}`} />
+          {/* Marqueur parité */}
+          <line x1={cx} y1={cy-r-6} x2={cx} y2={cy-r+6} stroke="#4a5568" strokeWidth="1.5" />
+          {/* Aiguille */}
+          <line
+            x1={cx} y1={cy}
+            x2={cx + (r - 8) * Math.cos((angle - 90) * Math.PI / 180)}
+            y2={cy + (r - 8) * Math.sin((angle - 90) * Math.PI / 180)}
+            stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx={cx} cy={cy} r="4" fill={color} />
+          {/* Labels */}
+          <text x="12" y="82" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace">0%</text>
+          <text x="62" y="24" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="middle">50%</text>
+          <text x="120" y="82" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="end">100%</text>
+        </svg>
+        <p style={{ color, fontWeight: 700, fontSize: '1.3rem', fontFamily: 'JetBrains Mono, monospace', marginTop: '-4px' }}>
+          {displayed}% femmes
+        </p>
+        <p className="text-muted text-xs mt-1">{femmes}F · {hommes}H</p>
+        <p className="text-muted" style={{ fontSize: '0.7rem', marginTop: '4px' }}>
+          {pct >= 45 && pct <= 55 ? '✅ Parité atteinte' : pct < 30 || pct > 70 ? '⚠️ Déséquilibre important' : ''}
+        </p>
+      </div>
+    </div>
+  )
 }
 
 function Badge({ chambre }: { chambre: string }) {
@@ -75,7 +136,6 @@ export default function ElusPage() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => { setPage(1) }, [q, chambre])
-
   useEffect(() => {
     if (!selected) { setEluStats(null); return }
     setStatsLoading(true); setEluStats(null)
@@ -158,30 +218,34 @@ export default function ElusPage() {
 
               <h3 className="h3 mb-4">Données du cabinet</h3>
               {statsLoading?(
-                <div className="card text-center py-6 mb-6"><p className="text-muted text-sm">Chargement des statistiques…</p></div>
+                <div className="card text-center py-6 mb-6"><p className="text-muted text-sm">Chargement…</p></div>
               ):eluStats?(
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                     <StatCard icon="👥" value={eluStats.tailleActuelle>0?`${eluStats.tailleActuelle}`:null} label="Collabs actifs" />
                     <StatCard icon="📅" value={eluStats.ancienneteMoyenneMois?`${eluStats.ancienneteMoyenneMois} mois`:null} label="Ancienneté moy." />
                     <StatCard icon="🔄" value={eluStats.turnover12m!==null?`${eluStats.turnover12m}%`:null} label="Turnover 12 mois" />
-                    <StatCard icon="📋" value={`${eluStats.totalMouvementsHistorique}`} label="Mvts historiques" />
                   </div>
+
+                  {/* Mixité — jauge */}
                   {eluStats.pctFemmes!==null&&(
                     <div className="card mb-5">
-                      <p className="text-white font-semibold text-sm mb-3">Mixité du cabinet</p>
-                      <div>
-                        <div className="flex justify-between text-xs mb-1.5">
-                          <span style={{ color:'#f9a8d4' }}>Femmes {eluStats.pctFemmes}%</span>
-                          <span style={{ color:'#93c5fd' }}>Hommes {100-eluStats.pctFemmes}%</span>
-                        </div>
-                        <div style={{ height:8,borderRadius:4,overflow:'hidden',background:'#93c5fd' }}>
-                          <div style={{ height:'100%',width:`${eluStats.pctFemmes}%`,background:'#f9a8d4',borderRadius:'4px 0 0 4px' }} />
-                        </div>
-                        <p className="text-muted text-xs mt-2">{eluStats.femmes} femme{eluStats.femmes>1?'s':''} · {eluStats.hommes} homme{eluStats.hommes>1?'s':''}</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-white font-semibold text-sm">Mixité du cabinet</p>
+                        <a href="https://www.cavaparlement.eu/mixiparl" target="_blank" rel="noopener"
+                          className="text-xs text-muted hover:text-or transition-colors" style={{ textDecoration:'none' }}>
+                          Voir MixiParl ↗
+                        </a>
                       </div>
+                      <MixiteGauge pct={eluStats.pctFemmes} femmes={eluStats.femmes} hommes={eluStats.hommes} />
+                      <p className="text-muted text-center mt-3" style={{ fontSize:'0.7rem' }}>
+                        Genre inféré via prénom (source : cavaparlement.eu) ·{' '}
+                        <a href="https://www.cavaparlement.eu/methodologie" target="_blank" rel="noopener" className="hover:text-or" style={{ textDecoration:'none' }}>Méthodologie</a>
+                      </p>
                     </div>
                   )}
+
+                  {/* Mouvements */}
                   {(eluStats.arrivees12m>0||eluStats.departs12m>0)&&(
                     <div className="card mb-5">
                       <p className="text-white font-semibold text-sm mb-3">Mouvements sur 12 mois</p>
@@ -194,12 +258,15 @@ export default function ElusPage() {
                           <span style={{ color:'#fc8181',fontSize:'1.4rem' }}>↘</span>
                           <div><p style={{ color:'#fc8181',fontWeight:700,fontSize:'1.2rem' }}>{eluStats.departs12m}</p><p className="text-muted text-xs">départ{eluStats.departs12m>1?'s':''}</p></div>
                         </div>
+                        <div className="flex items-center gap-2 ml-auto">
+                          <div><p className="text-muted text-xs">Total historique</p><p className="text-white font-mono font-bold">{eluStats.totalMouvementsHistorique}</p></div>
+                        </div>
                       </div>
                     </div>
                   )}
                 </>
               ):(
-                <div className="card text-center py-6 mb-6"><p className="text-muted text-sm">Pas de données disponibles pour ce cabinet.</p></div>
+                <div className="card text-center py-6 mb-6"><p className="text-muted text-sm">Pas de données disponibles.</p></div>
               )}
 
               <h3 className="h3 mb-1 mt-2">Évaluations VigieParl</h3>
