@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const db = supabaseAnon()
 
   let query = db.from('elus')
-    .select('id,nom,prenom,chambre,groupe,groupe_label,famille_politique,departement,an_id,matricule,ep_id,en_exercice,vigiparl_elu_scores(contributions_count,score_global,score_conditions_travail,score_relations_elu,score_contenu_travail,score_remuneration,score_ambiance,recommande_pct)', { count: 'exact' })
+    .select('id,nom,prenom,chambre,groupe,groupe_label,famille_politique,departement,an_id,matricule,ep_id,en_exercice,photo_url,vigiparl_elu_scores(contributions_count,score_global,score_conditions_travail,score_relations_elu,score_contenu_travail,score_remuneration,score_ambiance,recommande_pct)', { count: 'exact' })
     .eq('en_exercice', true)
     .range((page - 1) * limit, page * limit - 1)
     .order('nom')
