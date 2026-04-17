@@ -73,12 +73,12 @@ function MixiteGauge({ pct, femmes, hommes }: { pct: number; femmes: number; hom
           <text x="62" y="24" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="middle">50%</text>
           <text x="120" y="82" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="end">100%</text>
         </svg>
-        <p style={{ color, fontWeight: 700, fontSize: '1.3rem', fontFamily: 'JetBrains Mono, monospace', marginTop: '-4px' }}>
-          {displayed}% femmes
+        <p style={{ color, fontWeight: 700, fontSize: '1.1rem', fontFamily: 'JetBrains Mono, monospace', marginTop: '-4px' }}>
+          Indice de parité : {Math.round(Math.min(displayed, 100 - displayed) * 2)}%
         </p>
         <p className="text-muted text-xs mt-1">{femmes}F · {hommes}H</p>
-        <p className="text-muted" style={{ fontSize: '0.7rem', marginTop: '4px' }}>
-          {pct >= 45 && pct <= 55 ? '✅ Parité atteinte' : pct < 30 || pct > 70 ? '⚠️ Déséquilibre important' : ''}
+        <p style={{ fontSize: '0.7rem', marginTop: '4px', color }}>
+          {pct >= 45 && pct <= 55 ? '✅ Parité atteinte' : pct < 30 || pct > 70 ? '⚠️ Déséquilibre important' : '↗ En cours'}
         </p>
       </div>
     </div>
