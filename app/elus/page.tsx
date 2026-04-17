@@ -30,57 +30,41 @@ function mixiteColor(pct: number): string {
 function MixiteGauge({ pct, femmes, hommes }: { pct: number; femmes: number; hommes: number }) {
   const [displayed, setDisplayed] = useState(0)
   useEffect(() => {
-    let start = 0
-    const target = pct
-    const duration = 600
-    const startTime = performance.now()
+    const target = pct; const duration = 600; const startTime = performance.now()
     function animate(now: number) {
-      const elapsed = now - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const ease = 1 - Math.pow(1 - progress, 3)
-      setDisplayed(Math.round(target * ease))
+      const elapsed = now - startTime; const progress = Math.min(elapsed/duration, 1)
+      const ease = 1 - Math.pow(1-progress, 3)
+      setDisplayed(Math.round(target*ease))
       if (progress < 1) requestAnimationFrame(animate)
     }
     requestAnimationFrame(animate)
   }, [pct])
 
   const color = mixiteColor(pct)
-  // Angle: 0% = -90deg (gauche), 50% = 0deg (haut), 100% = 90deg (droite)
-  const angle = (displayed / 100) * 180 - 90
-  const r = 52
-  const cx = 70; const cy = 70
+  const angle = (displayed/100)*180 - 90
+  const r = 52; const cx = 70; const cy = 70
+  const indice = Math.round(Math.min(displayed, 100-displayed)*2)
 
   return (
-    <div>
-      <div className="flex flex-col items-center">
-        <svg width="140" height="85" viewBox="0 0 140 85">
-          {/* Arc de fond */}
-          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke="#2d3748" strokeWidth="10" strokeLinecap="round" />
-          {/* Arc coloré */}
-          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
-            strokeDasharray={`${Math.PI * r * displayed / 100} ${Math.PI * r}`} />
-          {/* Marqueur parité */}
-          <line x1={cx} y1={cy-r-6} x2={cx} y2={cy-r+6} stroke="#4a5568" strokeWidth="1.5" />
-          {/* Aiguille */}
-          <line
-            x1={cx} y1={cy}
-            x2={cx + (r - 8) * Math.cos((angle - 90) * Math.PI / 180)}
-            y2={cy + (r - 8) * Math.sin((angle - 90) * Math.PI / 180)}
-            stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx={cx} cy={cy} r="4" fill={color} />
-          {/* Labels */}
-          <text x="12" y="82" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace">0%</text>
-          <text x="62" y="24" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="middle">50%</text>
-          <text x="120" y="82" fill="#4a5568" fontSize="8" fontFamily="JetBrains Mono, monospace" textAnchor="end">100%</text>
-        </svg>
-        <p style={{ color, fontWeight: 700, fontSize: '1.1rem', fontFamily: 'JetBrains Mono, monospace', marginTop: '-4px' }}>
-          Indice de parité : {Math.round(Math.min(displayed, 100 - displayed) * 2)}%
-        </p>
-        <p className="text-muted text-xs mt-1">{femmes}F · {hommes}H</p>
-        <p style={{ fontSize: '0.7rem', marginTop: '4px', color }}>
-          {pct >= 45 && pct <= 55 ? '✅ Parité atteinte' : pct < 30 || pct > 70 ? '⚠️ Déséquilibre important' : '↗ En cours'}
-        </p>
-      </div>
+    <div className="flex flex-col items-center">
+      <svg width="140" height="85" viewBox="0 0 140 85">
+        <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke="#2d3748" strokeWidth="10" strokeLinecap="round" />
+        <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+          strokeDasharray={`${Math.PI*r*displayed/100} ${Math.PI*r}`} />
+        <line x1={cx} y1={cy-r-6} x2={cx} y2={cy-r+6} stroke="#4a5568" strokeWidth="1.5" />
+        <line x1={cx} y1={cy} x2={cx+(r-8)*Math.cos((angle-90)*Math.PI/180)} y2={cy+(r-8)*Math.sin((angle-90)*Math.PI/180)} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="4" fill={color} />
+        <text x="12" y="82" fill="#4a5568" fontSize="8" fontFamily="monospace">0%</text>
+        <text x="62" y="24" fill="#4a5568" fontSize="8" fontFamily="monospace" textAnchor="middle">50%</text>
+        <text x="120" y="82" fill="#4a5568" fontSize="8" fontFamily="monospace" textAnchor="end">100%</text>
+      </svg>
+      <p style={{ color, fontWeight: 700, fontSize: '1.1rem', fontFamily: 'monospace', marginTop: '-4px' }}>
+        Indice de parité : {indice}%
+      </p>
+      <p className="text-muted text-xs mt-1">{femmes}F · {hommes}H</p>
+      <p style={{ fontSize: '0.7rem', marginTop: '4px', color }}>
+        {pct >= 45 && pct <= 55 ? '✅ Parité atteinte' : pct < 30 || pct > 70 ? '⚠️ Déséquilibre important' : ''}
+      </p>
     </div>
   )
 }
@@ -227,25 +211,23 @@ export default function ElusPage() {
                     <StatCard icon="🔄" value={eluStats.turnover12m!==null?`${eluStats.turnover12m}%`:null} label="Turnover 12 mois" />
                   </div>
 
-                  {/* Mixité — jauge */}
                   {eluStats.pctFemmes!==null&&(
                     <div className="card mb-5">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-white font-semibold text-sm">Mixité du cabinet</p>
                         <a href="https://www.cavaparlement.eu/mixiparl" target="_blank" rel="noopener"
-                          className="text-xs text-muted hover:text-or transition-colors" style={{ textDecoration:'none' }}>
+                          style={{ fontSize:'0.75rem', color:'#7a90a8', textDecoration:'none' }}>
                           Voir MixiParl ↗
                         </a>
                       </div>
                       <MixiteGauge pct={eluStats.pctFemmes} femmes={eluStats.femmes} hommes={eluStats.hommes} />
-                      <p className="text-muted text-center mt-3" style={{ fontSize:'0.7rem' }}>
+                      <p style={{ fontSize:'0.68rem', color:'#4a5568', textAlign:'center', marginTop:'8px' }}>
                         Genre inféré via prénom (source : cavaparlement.eu) ·{' '}
-                        <a href="https://www.cavaparlement.eu/methodologie" target="_blank" rel="noopener" className="hover:text-or" style={{ textDecoration:'none' }}>Méthodologie</a>
+                        <a href="https://www.cavaparlement.eu/methodologie" target="_blank" rel="noopener" style={{ color:'#7a90a8', textDecoration:'none' }}>Méthodologie</a>
                       </p>
                     </div>
                   )}
 
-                  {/* Mouvements */}
                   {(eluStats.arrivees12m>0||eluStats.departs12m>0)&&(
                     <div className="card mb-5">
                       <p className="text-white font-semibold text-sm mb-3">Mouvements sur 12 mois</p>
