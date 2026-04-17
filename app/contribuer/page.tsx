@@ -1,6 +1,4 @@
 'use client'
-import dynamic from 'next/dynamic'
-const Turnstile = dynamic(() => import('@/components/Turnstile'), { ssr: false })
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
@@ -43,7 +41,6 @@ export default function ContribuerPage() {
   const [temoignage, setTemoignage] = useState('')
   // State
   const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [done, setDone] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState('')
 
   async function searchElus(q: string) {
     setSearch(q); if (!q) { setElu(null); setResults([]); return }
@@ -56,7 +53,7 @@ export default function ContribuerPage() {
   async function sendOtp() {
     setError(''); setLoading(true)
     try {
-      const r = await fetch('/api/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, turnstileToken }) })
+      const r = await fetch('/api/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
       const d = await r.json()
       if (!r.ok) { setError(d.error); return }
       setSessionId(d.sessionId); setOtpSent(true)
@@ -259,8 +256,8 @@ export default function ContribuerPage() {
             <div className="flex justify-between mt-6">
               <button className="btn btn-ghost" onClick={() => setStep(1)}>← Retour</button>
               <button className="btn btn-gold btn-md" onClick={sendOtp}
-                disabled={loading || !email || !prenom || !nom || !tranche || !genre || !turnstileToken}>
-                <Turnstile onVerify={(t) => setTurnstileToken(t)} onExpire={() => setTurnstileToken('')} />{loading ? 'Envoi…' : 'Suivant →'}
+                disabled={loading || !email || !prenom || !nom || !tranche || !genre}>
+                {loading ? 'Envoi…' : 'Suivant →'}
               </button>
             </div>
           </div>
